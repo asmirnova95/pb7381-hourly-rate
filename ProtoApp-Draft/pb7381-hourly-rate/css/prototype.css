@@ -17,7 +17,12 @@ body.pb-page {
 }
 
 /* ── Точка входа: ссылки на два варианта ───────────────────── */
-.pb-page--index { padding: var(--ds-space-4x); }
+.pb-page--index {
+  padding: var(--ds-space-4x);
+  /* витрина тоже открывается с телефона: под вырез и системную полосу */
+  padding-top: calc(var(--ds-space-4x) + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(var(--ds-space-4x) + env(safe-area-inset-bottom, 0px));
+}
 .pb-hub {
   /* 384 px = 12 шагов сетки ДС; отдельного токена такой ширины в ДС нет */
   max-width: calc(var(--ds-size-8x) * 12);
@@ -73,7 +78,8 @@ body.pb-page {
 .pb-app {
   width: 100%;
   max-width: 390px;                     /* бриф §8: на десктопе колонка 390 */
-  height: 100dvh;
+  height: 100vh;                        /* запасной вариант для старых браузеров */
+  height: 100dvh;                       /* реальная высота вьюпорта: тулбары Safari / Chrome */
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -85,112 +91,24 @@ body.pb-page {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
+  /* вырез и «динамический остров» iPhone, статус-бар Android: шапка начинается
+     ниже них — иначе заголовок услуги уходит под настоящие часы (нарисованный
+     статус-бар 55 px снят 11.11.2026) */
+  padding-top: env(safe-area-inset-top, 0px);
   background: var(--ds-color-brand-neutral-default);
 }
 
-/* ── Header full = 110: статус-бар 55 + хром 55 (макет 1:1) ──
-   Статус-бар и хром браузера — системная оболочка, а не компонент iikoDS,
-   поэтому токенов у них нет: значения взяты из макета как есть (те же
-   литералы используются в стенде ДС, ds-review.css). */
-.pb-statusbar {
-  position: relative;
-  flex: 0 0 auto;
-  height: 55px;
-  background: var(--ds-color-brand-neutral-default);
-}
-.pb-statusbar__time {
-  position: absolute;
-  left: 18px;
-  top: 16px;
-  width: 50px;
-  font-family: 'Montserrat', var(--ds-typography-font-family-family), Arial, sans-serif;
-  font-weight: 700;
-  font-size: 15px;
-  line-height: 18px;
-  text-align: center;
-  color: #070707;
-}
-.pb-statusbar__stats {
-  position: absolute;
-  right: 18px;
-  top: 19px;
-  display: block;
-  width: 67px;
-  height: 12px;
-}
-
-/* хром: дом 24 · адресное поле 34 · счётчик вкладок 16 · меню 24
-   (левое поле 12, поле адреса 44 / правый край 84, вкладки 52, меню 12) */
-.pb-chrome {
-  position: relative;
-  flex: 0 0 auto;
-  height: 55px;
-  background: var(--ds-color-brand-neutral-default);
-}
-/* у иконок шапки 24 / 16 px — зона нажатия добирается слоем 44×44 */
-.pb-chrome__btn {
-  position: absolute;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--ds-color-icon-primary);
-  font-family: inherit;
-  cursor: pointer;
-}
-.pb-chrome__btn::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 44px;
-  height: 44px;
-  transform: translate(-50%, -50%);
-}
-.pb-chrome__btn img,
-.pb-chrome__btn svg { display: block; }
-.pb-chrome__home { left: 12px; top: 15.5px; width: 24px; height: 24px; }
-.pb-chrome__more { right: 12px; top: 15.5px; width: 24px; height: 24px; }
-.pb-chrome__tabs {
-  right: 52px;
-  top: 19.5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  width: 16px;
-  height: 16px;
-  border: 1.5px solid var(--ds-color-icon-primary);
-  border-radius: 5px;
-  font-size: var(--ds-typography-font-size-2-5x);
-  line-height: 12px;
-  /* в ДС весов только 400/500, в макете счётчик вкладок — 700 */
-  font-weight: 700;
-}
-.pb-chrome__address {
-  position: absolute;
-  left: 44px;
-  right: 84px;
-  top: 16px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  gap: var(--ds-space-2x);
-  padding: 0 11px;
-  box-sizing: border-box;
-  border-radius: 17px;
-  background: #f7f9ff;
-  cursor: pointer;
-}
-.pb-chrome__lock { flex: none; width: 8px; height: auto; }
-.pb-chrome__address-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--ds-color-text-primary);
-  font-size: var(--ds-typography-font-size-2-5x);
-  line-height: 13px;
-  font-weight: var(--ds-typography-font-weight-medium);
-}
+/* ── Нарисованного интерфейса телефона нет (заказчик 11.11.2026) ──
+   В макете шапка была «Header full = 110»: статус-бар iOS 55 (время «8:00»,
+   иконки сети и батареи) плюс хром браузера 55 (дом, адресное поле «iiko»,
+   счётчик вкладок, меню). На реальном телефоне это дублирует настоящие часы,
+   вырез и адресную строку и отнимает 110 px экрана — оболочку убрали, вместе
+   с ней ушли и литеральные значения из макета (`#070707`, `#F7F9FF`,
+   55 / 34 / 17 / 1.5, Montserrat 700): они были единственным местом в CSS
+   без токенов ДС. Шапка теперь начинается с заголовка услуги, а отступы под
+   вырез (iPhone) и системные полосы (Android) дают `env(safe-area-inset-*)`:
+   сверху — `.pb-app__head` и `.pb-screen`, снизу — нижняя панель, шторка
+   и футер экрана. */
 
 /* заголовок услуги + иконка информации (макет: блок 52 px) */
 .pb-title {
@@ -851,10 +769,14 @@ body.pb-tariff-off .pb-status__tools { display: none; }
 /* ── Полноэкранный слой «Настройки» ───────────────────────── */
 .pb-screen {
   position: fixed;
-  /* интерфейс телефона (статус-бар 55 + строка адреса 55) остаётся видимым:
-     экран начинается под ним, а не с нуля (заказчик 11.11.2026) */
-  top: 110px;
+  /* нарисованной оболочки телефона больше нет (снята 11.11.2026): экран
+     занимает весь вьюпорт, а отступ под вырез даёт тот же safe-area, что
+     у шапки приложения — поэтому заголовок экрана встаёт ровно на место
+     заголовка услуги, а не на 110 px ниже */
+  top: 0;
   bottom: 0;
+  padding-top: env(safe-area-inset-top, 0px);
+  box-sizing: border-box;
   left: 50%;
   transform: translateX(-50%);
   /* ниже затемнения (24) и шторки (25): экран — слой под шторкой */
@@ -1019,4 +941,18 @@ body.pb-tariff-off .pb-status__tools { display: none; }
   line-height: var(--ds-font-body-s-14-normal-medium-line);
   font-weight: var(--ds-typography-font-weight-medium);
   cursor: pointer;
+}
+
+/* ── Телефон: страница на весь экран ──────────────────────────
+   Нарисованной оболочки телефона больше нет (заказчик 11.11.2026), поэтому
+   на реальном телефоне прототип занимает всю ширину вьюпорта: 390 px — это
+   ширина десктопной колонки из брифа §8, а не предел для устройства.
+   Телефонов шире 430 px нет, планшеты (768) и десктоп по-прежнему видят
+   колонку 390 по центру. Слои (шторка, полноэкранный экран, снэкбар) тянутся
+   вместе с колонкой — иначе на телефоне шире 390 они были бы уже контента. */
+@media (max-width: 430px) {
+  .pb-app,
+  .pb-sheet,
+  .pb-screen,
+  .pb-snackbar { max-width: 100%; }
 }

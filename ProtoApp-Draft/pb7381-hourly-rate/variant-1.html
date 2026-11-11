@@ -30,30 +30,11 @@
 
   <!-- ── Шапка приложения: не скроллится ─────────────────── -->
   <header class="pb-app__head">
-    <!-- Header full = 110: статус-бар 55 + хром 55 (макет 19121:58899) -->
-    <div class="pb-statusbar">
-      <span class="pb-statusbar__time">8:00</span>
-      <img class="pb-statusbar__stats" src="../../Design-System/dsr-assets/stats.svg"
-           alt="" width="67" height="12">
-    </div>
-
-    <div class="pb-chrome">
-      <button type="button" class="pb-chrome__btn pb-chrome__home" aria-label="Главная">
-        <img src="../../Design-System/dsr-assets/home.svg" alt="" width="24" height="24">
-      </button>
-      <button type="button" class="pb-chrome__btn pb-chrome__address" aria-label="Адрес">
-        <img class="pb-chrome__lock" src="../../Design-System/dsr-assets/lock-mobile.svg"
-             alt="" width="8" height="11">
-        <span class="pb-chrome__address-text">iiko</span>
-      </button>
-      <button type="button" class="pb-chrome__btn pb-chrome__tabs" aria-label="Открытые вкладки">1</button>
-      <button type="button" class="pb-chrome__btn pb-chrome__more" aria-label="Меню">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
-          <circle cx="12" cy="6" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="18" r="2"/>
-        </svg>
-      </button>
-    </div>
-
+    <!-- Интерфейса телефона (статус-бар 55 + хром браузера 55 из макета
+         19121:58899) здесь нет: заказчик 11.11.2026 — на реальном устройстве
+         он дублировал бы настоящие часы и адресную строку. Шапка начинается
+         с заголовка услуги; отступ под вырез экрана и домашний индикатор даёт
+         safe-area (`env(safe-area-inset-*)`) в prototype.css -->
     <div class="pb-title">
       <h1 class="pb-title__text">Бильярд</h1>
       <button type="button" class="ds-btn-icon ds-btn-icon--s ds-btn-icon--neutral ds-btn-icon--text"
