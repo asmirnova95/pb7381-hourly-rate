@@ -1,0 +1,1022 @@
+/* ============================================================
+   PB-7381 · раскладка прототипа (только каркас и сетка; вид — из ДС)
+
+   ПРАВИЛО БРИФА (§7.1, §9): цветов, кеглей, радиусов, теней литералами нет —
+   только токены ДС (var(--ds-…)) и классы ds-*. Здесь живут: ширина колонки
+   телефона, каркас экрана (шапка / расписание / футер / нижняя панель),
+   сетка 7×24 и позиционирование шторок и снэкбара.
+   ============================================================ */
+
+/* ── База страницы ─────────────────────────────────────────── */
+html, body { height: 100%; }
+body.pb-page {
+  margin: 0;
+  background: var(--ds-color-brand-neutral-super-light);
+  color: var(--ds-color-text-primary);
+  font-family: var(--ds-typography-font-family-family), Arial, sans-serif;
+}
+
+/* ── Точка входа: ссылки на два варианта ───────────────────── */
+.pb-page--index { padding: var(--ds-space-4x); }
+.pb-hub {
+  /* 384 px = 12 шагов сетки ДС; отдельного токена такой ширины в ДС нет */
+  max-width: calc(var(--ds-size-8x) * 12);
+  margin: 0 auto;
+  padding: var(--ds-space-4x);
+  background: var(--ds-color-brand-neutral-default);
+  border-radius: var(--ds-radius-3x);
+}
+.pb-hub__head { display: flex; flex-direction: column; gap: var(--ds-space-1x); }
+.pb-hub__eyebrow { color: var(--ds-color-text-secondary); }
+.pb-hub__title {
+  margin: 0;
+  font: var(--ds-font-header-s-20-normal-medium);
+  letter-spacing: var(--ds-font-header-s-20-normal-medium-spacing);
+  color: var(--ds-color-text-primary);
+}
+.pb-hub__lead { margin: 0; color: var(--ds-color-text-secondary); }
+.pb-hub__list {
+  margin: var(--ds-space-4x) 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2x);
+}
+.pb-hub__item {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3x);
+  padding: var(--ds-space-3x);
+  background: var(--ds-color-brand-neutral-super-light);
+  border-radius: var(--ds-radius-2x);
+}
+.pb-hub__item-text { display: flex; flex-direction: column; gap: var(--ds-space-0-5x); flex: 1 1 auto; }
+.pb-hub__item-title { font-size: var(--ds-font-body-m-16-normal-medium-size); line-height: var(--ds-font-body-m-16-normal-medium-line); font-weight: var(--ds-typography-font-weight-medium); }
+.pb-hub__item-desc { color: var(--ds-color-text-secondary); }
+.pb-hub__link { flex: 0 0 auto; text-decoration: none; }
+.pb-hub__note { margin: 0; color: var(--ds-color-text-secondary); }
+
+/* ============================================================
+   Экран услуги: каркас 375 / 390
+   Размеры из макета (фрейм 375×812): поля 16, заголовок и вкладки
+   не скроллятся, расписание — единственная скроллящаяся область,
+   снизу несдвигаемая панель «Закрыть / Сохранить» (60 px).
+   ============================================================ */
+
+.pb-page--app {
+  display: flex;
+  justify-content: center;
+  background: var(--ds-color-brand-neutral-super-light);
+}
+
+.pb-app {
+  width: 100%;
+  max-width: 390px;                     /* бриф §8: на десктопе колонка 390 */
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--ds-color-brand-neutral-default);
+}
+
+/* ── Шапка приложения (не скроллится) ─────────────────────── */
+.pb-app__head {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--ds-color-brand-neutral-default);
+}
+
+/* ── Header full = 110: статус-бар 55 + хром 55 (макет 1:1) ──
+   Статус-бар и хром браузера — системная оболочка, а не компонент iikoDS,
+   поэтому токенов у них нет: значения взяты из макета как есть (те же
+   литералы используются в стенде ДС, ds-review.css). */
+.pb-statusbar {
+  position: relative;
+  flex: 0 0 auto;
+  height: 55px;
+  background: var(--ds-color-brand-neutral-default);
+}
+.pb-statusbar__time {
+  position: absolute;
+  left: 18px;
+  top: 16px;
+  width: 50px;
+  font-family: 'Montserrat', var(--ds-typography-font-family-family), Arial, sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 18px;
+  text-align: center;
+  color: #070707;
+}
+.pb-statusbar__stats {
+  position: absolute;
+  right: 18px;
+  top: 19px;
+  display: block;
+  width: 67px;
+  height: 12px;
+}
+
+/* хром: дом 24 · адресное поле 34 · счётчик вкладок 16 · меню 24
+   (левое поле 12, поле адреса 44 / правый край 84, вкладки 52, меню 12) */
+.pb-chrome {
+  position: relative;
+  flex: 0 0 auto;
+  height: 55px;
+  background: var(--ds-color-brand-neutral-default);
+}
+/* у иконок шапки 24 / 16 px — зона нажатия добирается слоем 44×44 */
+.pb-chrome__btn {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ds-color-icon-primary);
+  font-family: inherit;
+  cursor: pointer;
+}
+.pb-chrome__btn::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+.pb-chrome__btn img,
+.pb-chrome__btn svg { display: block; }
+.pb-chrome__home { left: 12px; top: 15.5px; width: 24px; height: 24px; }
+.pb-chrome__more { right: 12px; top: 15.5px; width: 24px; height: 24px; }
+.pb-chrome__tabs {
+  right: 52px;
+  top: 19.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--ds-color-icon-primary);
+  border-radius: 5px;
+  font-size: var(--ds-typography-font-size-2-5x);
+  line-height: 12px;
+  /* в ДС весов только 400/500, в макете счётчик вкладок — 700 */
+  font-weight: 700;
+}
+.pb-chrome__address {
+  position: absolute;
+  left: 44px;
+  right: 84px;
+  top: 16px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2x);
+  padding: 0 11px;
+  box-sizing: border-box;
+  border-radius: 17px;
+  background: #f7f9ff;
+  cursor: pointer;
+}
+.pb-chrome__lock { flex: none; width: 8px; height: auto; }
+.pb-chrome__address-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ds-color-text-primary);
+  font-size: var(--ds-typography-font-size-2-5x);
+  line-height: 13px;
+  font-weight: var(--ds-typography-font-weight-medium);
+}
+
+/* заголовок услуги + иконка информации (макет: блок 52 px) */
+.pb-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3x);
+  min-height: 52px;
+  box-sizing: border-box;
+  padding: var(--ds-space-2x) var(--ds-space-4x) var(--ds-space-1x);
+}
+.pb-title__text {
+  margin: 0;
+  font: var(--ds-font-header-s-20-normal-medium);
+  letter-spacing: var(--ds-font-header-s-20-normal-medium-spacing);
+  color: var(--ds-color-text-primary);
+}
+
+/* вкладки карточки: строка шире экрана — скроллится по горизонтали */
+.pb-tabs {
+  padding: var(--ds-space-2x) 0 0 var(--ds-space-4x);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pb-tabs::-webkit-scrollbar { display: none; }
+.pb-tabs .ds-tabs { border-bottom: none; }
+.pb-tabs .ds-tab { padding-left: var(--ds-space-3x); padding-right: var(--ds-space-3x); }
+/* бриф §7.1 п.2: управляющие элементы не ниже 44 px — вкладки, тумблер */
+.pb-tabs .ds-tab { min-height: 44px; }
+.pb-status .ds-slide-toggle__row { min-height: 44px; }
+
+/* строка состояния: тумблер «Включена» + иконки ресторана и настроек.
+   Иконки — Icon size 24 (`ds-icon-size--6x`) с подложкой State: заказчик
+   11.11.2026 просил 24 px (было 32, до этого 36), а State даёт hover `#EBEBEB`
+   и нажатие `#E0E0E0` (fixes.css п. 14 — контейнер и модификатор `--state` там же).
+   Подложка = иконка + 8 = 32, поэтому кнопка-обёртка 32×32 и прозрачная:
+   вид элемента задаёт ДС, кнопка нужна только как тач-зона 48 (бриф §7.1 п.2).
+   Кнопки идут в ряд с зазором 8: круги подложек не слипаются */
+.pb-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-2x);
+  padding: var(--ds-space-2x) var(--ds-space-4x);
+}
+.pb-status .ds-slide-toggle { flex: 0 0 auto; }
+.pb-status__tools {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2x);
+  min-width: 0;
+}
+.pb-status .pb-tool {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ds-size-8x);                    /* 32 = иконка 24 + подложка 4/4 */
+  height: var(--ds-size-8x);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ds-color-icon-primary);
+  font-family: inherit;
+  cursor: pointer;
+}
+/* тач-зона 48 = иконка 24 + поле 12 с каждой стороны (как у .pb-close) */
+.pb-status .pb-tool::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--ds-size-6x) + var(--ds-space-6x));
+  height: calc(var(--ds-size-6x) + var(--ds-space-6x));
+  transform: translate(-50%, -50%);
+}
+.pb-status .pb-tool .ds-icon-size svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+/* Подложка State в ДС включается наведением на сам значок (fixes.css п. 14:
+   `.ds-icon-size--state:hover::before`). Здесь кликабельна кнопка 32
+   с тач-зоной 48, поэтому состояние вешаем на неё — иначе наведение на поле
+   вокруг иконки не подсвечивает её. Цвета те же, что в fixes.css (токенов нет,
+   №89): hover #EBEBEB, press #E0E0E0 */
+.pb-status .pb-tool:hover .ds-icon-size--state::before { background: #ebebeb; }
+.pb-status .pb-tool:active .ds-icon-size--state::before { background: #e0e0e0; }
+/* тарификация выключена: в строке состояния остаётся только тумблер */
+body.pb-tariff-off .pb-status__tools { display: none; }
+
+/* ── Область расписания (скроллится только она) ───────────── */
+.pb-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Вариант 1: переключатель дня + список 24 интервалов.
+   Button toggle (макет 19107:48915): контейнер r12, белый фон, рамка #E0E0E0,
+   паддинг и зазор 4; выбранный день — Button M Accent Filled (#448AFF),
+   невыбранные — Neutral Text (#333333). */
+.pb-daybar {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: auto;
+  display: flex;
+  gap: var(--ds-space-1x);
+  /* отступ до Button toggle — ровно 16 px (заказчик 11.11.2026): строка
+     состояния 48 (тач-зона тумблера), сам тумблер в ней 44 и центрируется,
+     поэтому 4 + нижнее поле 8 + этот margin 4 = 16 от элементов строки */
+  margin: var(--ds-space-1x) var(--ds-space-4x) 0;
+  padding: var(--ds-space-1x);
+  background: var(--ds-color-brand-neutral-default);
+  border: 1px solid var(--ds-color-stroke-default);
+  border-radius: var(--ds-radius-3x);
+  box-sizing: border-box;
+}
+/* 7 чипов на 343 px: мобильный Button M даёт поля 16 (button-touch.css),
+   поэтому нулевые боковые поля нужны правилом с той же специфичностью —
+   иначе подпись «Пн» уезжает из центра кнопки */
+.pb-daybar .pb-daychip { padding-left: 0; padding-right: 0; }
+.pb-daychip { flex: 1 1 0; min-width: 0; }
+.pb-daychip .ds-btn__label { width: 100%; text-align: center; }
+
+.pb-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2x);
+  padding: var(--ds-space-3x) var(--ds-space-4x) var(--ds-space-2x);
+}
+
+/* строка интервала: время, название тарифа, цена (макет `row` 19107:49258:
+   56/r8/pad 12). Фон — цвет тарифа: базовая Neutral/50, счастливый час
+   Accent/10, выходные Negative/50 — приходит инлайном из js/ui.js. */
+.pb-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3x);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--ds-space-3x);
+  border: 0;
+  border-radius: var(--ds-radius-2x);
+  background: var(--pb-row-bg, var(--ds-palette-neutral-50));
+  color: var(--pb-row-ink, var(--ds-color-text-primary));
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+/* нажатие не подменяет фон тарифа, а притемняет его */
+.pb-row:active { filter: brightness(0.97); }
+.pb-row__time {
+  flex: 0 0 40px;
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-caption-l-12-normal-regular-size);
+  line-height: var(--ds-font-caption-l-12-normal-regular-line);
+  font-variant-numeric: tabular-nums;
+}
+.pb-row__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-4x);
+}
+.pb-row__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ds-color-text-primary);
+  font-size: var(--ds-font-body-s-14-normal-regular-size);
+  line-height: var(--ds-font-body-s-14-normal-regular-line);
+}
+.pb-row__price {
+  flex: 0 0 auto;
+  color: var(--ds-color-text-primary);
+  font-size: var(--ds-font-body-s-14-normal-regular-size);
+  line-height: var(--ds-font-body-s-14-normal-regular-line);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Вариант 2: сетка 7×24 + легенда тарифов под ней ──────── */
+.pb-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 var(--ds-space-4x) var(--ds-space-2x);
+}
+
+/* легенда — внизу под сеткой, фон прозрачный (заказчик 11.11.2026:
+   «легенда внизу, на прозрачном фоне»), при нехватке ширины прокручивается
+   по горизонтали; пункт не переносится и не сжимается */
+.pb-legend {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-4x);
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: var(--ds-space-2x) var(--ds-space-4x);
+  background: none;
+  touch-action: pan-x;
+}
+.pb-legend::-webkit-scrollbar { display: none; }
+.pb-legend__item {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1x);
+}
+.pb-legend__label {
+  white-space: nowrap;
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-body-s-14-normal-regular-size);
+  line-height: var(--ds-font-body-s-14-normal-regular-line);
+}
+.pb-dot {
+  flex: 0 0 auto;
+  width: var(--ds-size-4x);
+  height: var(--ds-size-4x);
+  border-radius: var(--ds-radius-circular);
+  background: var(--pb-dot-color, var(--ds-color-brand-neutral-light));
+}
+
+/* шапка дней: 40 (время) + 7 колонок по 39,86 из макета */
+.pb-grid__head,
+.pb-grid__row {
+  display: grid;
+  grid-template-columns: 40px repeat(7, minmax(0, 1fr));
+  gap: var(--ds-space-1x);
+}
+.pb-grid__head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  /* макет `19138:67321`: шапка дней 32 = 4 + ячейка 24 + 4. С нижним полем
+     строки состояния (8) это даёт 16 px от её нижней границы до подписей
+     «Пн…Вс» (заказчик 11.11.2026: «сделать отступ 16 пикс до сетки — сейчас
+     очень большое расстояние»); раньше ячейка была 44, шапка 56 и подписи
+     уезжали на 30 px от строки состояния */
+  padding: var(--ds-space-1x) 0;
+  background: var(--ds-color-brand-neutral-default);
+}
+.pb-grid__day {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* подпись дня — 24 в макете (`39,86×24`); зона нажатия 44 добирается слоем
+     ::after (бриф §7.1 п.2), поэтому высота шапки остаётся 32, как в макете */
+  min-height: var(--ds-size-6x);
+  padding: 0;
+  border: 0;
+  border-radius: var(--ds-radius-1x);
+  background: none;
+  color: var(--ds-color-text-secondary);
+  font-family: inherit;
+  font-size: var(--ds-font-caption-l-12-normal-regular-size);
+  font-weight: var(--ds-typography-font-weight-medium);
+  cursor: pointer;
+}
+.pb-grid__day--on {
+  background: var(--ds-color-surface-selected);
+  color: var(--ds-color-text-accent);
+}
+/* зона нажатия 44 по высоте шапки 24: слой на всю ширину ячейки, чтобы
+   соседние дни не перекрывались */
+.pb-grid__day::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+}
+
+.pb-grid__row { margin-bottom: var(--ds-space-1-5x); }
+
+/* время строки — кнопка-переключатель, как день в шапке: тап выделяет час
+   во всех семи днях, повторный тап снимает; подсветка та же (Surface/Selected),
+   липнет к левому краю при горизонтальной прокрутке */
+.pb-grid__time {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--ds-space-1x) 0 0;
+  border: 0;
+  border-radius: var(--ds-radius-1x);
+  background: var(--ds-color-brand-neutral-default);
+  color: var(--ds-color-text-secondary);
+  font-family: inherit;
+  font-size: var(--ds-font-caption-l-12-normal-regular-size);
+  line-height: var(--ds-font-caption-l-12-normal-regular-line);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  cursor: pointer;
+}
+.pb-grid__time--on {
+  background: var(--ds-color-surface-selected);
+  color: var(--ds-color-text-accent);
+}
+
+/* ячейка: цвет и буква тарифа, цены внутри нет (бриф §3.2, §9) */
+.pb-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ds-radius-1x);
+  background: var(--pb-cell-bg, var(--ds-color-brand-neutral-super-light));
+  color: var(--pb-cell-ink, var(--ds-color-text-secondary));
+  font-family: inherit;
+  font-size: var(--ds-font-caption-l-12-normal-regular-size);
+  font-weight: var(--ds-typography-font-weight-medium);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+/* зона нажатия не меньше 44×44, даже если ячейка уже (бриф §3.2) */
+.pb-cell::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 100%;
+  min-width: 44px;
+  min-height: 44px;
+  transform: translate(-50%, -50%);
+}
+.pb-cell--on { box-shadow: inset 0 0 0 2px var(--ds-color-stroke-accent); }
+
+/* ── Пустое состояние и скелетон ──────────────────────────── */
+.pb-empty {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-2x);
+  padding: var(--ds-space-8x) var(--ds-space-5x);
+  text-align: center;
+}
+.pb-empty__text {
+  margin: 0;
+  max-width: 300px;
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-body-s-14-normal-regular-size);
+  line-height: var(--ds-font-body-s-14-normal-regular-line);
+}
+
+.pb-skeleton {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2x);
+  padding: var(--ds-space-2x) var(--ds-space-4x);
+  overflow: hidden;
+}
+.pb-skeleton__row {
+  height: 56px;
+  border-radius: var(--ds-radius-2x);
+  background: var(--ds-color-brand-neutral-super-light);
+  animation: pb-pulse 1.2s ease-in-out infinite;
+}
+.pb-skeleton__row--chip { height: 44px; }
+@keyframes pb-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .55; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pb-skeleton__row { animation: none; }
+}
+
+/* ── Футер выделения: карточка ВМЕСТО панели «Закрыть / Сохранить» ──
+   Макет 375×152: белая карточка, радиус 16 сверху, тень Shadows/01 dp S,
+   поля 16, сводка Body S сверху и две кнопки M (44) внизу.
+   Заказчик 11.11.2026: карточка должна выезжать ПОВЕРХ панели с кнопками
+   «Закрыть/Сохранить» — на экране она вместо них. Поэтому она позиционирована
+   от низа панели (`bottom: 0`), а не над ней, и панель под ней не видна.
+   Сетка при этом не сжимается — продолжает скроллиться под карточкой.
+   `z-index` обязателен: у липкой колонки времени `.pb-grid__time` свой
+   z-index 1, у шапки дней 2 — без него цифры часов рисовались поверх карточки
+   (баг 11.11.2026). Панель `.pb-bottombar` поднята до z-index 2 и держит
+   карточку выше всей сетки.
+   Высота — по содержимому (16 + 20 + 16 + 16 + 44 + 16 = 128), без распорки:
+   раньше `min-height: 152` + `space-between` растягивали пустоту между сводкой
+   и кнопками (заказчик: «огромный отступ», нужен ровно 16) */
+.pb-selbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4x);
+  padding: var(--ds-space-4x);
+  padding-bottom: calc(var(--ds-space-4x) + env(safe-area-inset-bottom, 0px));
+  border-radius: var(--ds-radius-4x) var(--ds-radius-4x) 0 0;
+  background: var(--ds-color-brand-neutral-default);
+  box-shadow: var(--ds-shadow-shadows-01-dp-sl);
+}
+.pb-selbar__summary { flex: 0 0 auto; min-width: 0; display: flex; flex-direction: column; }
+.pb-selbar__line1 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ds-color-text-primary);
+  font-size: var(--ds-font-body-s-14-normal-medium-size);
+  line-height: var(--ds-font-body-s-14-normal-medium-line);
+  font-weight: var(--ds-typography-font-weight-medium);
+}
+.pb-selbar__line2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-caption-l-12-normal-regular-size);
+  line-height: var(--ds-font-caption-l-12-normal-regular-line);
+}
+/* две кнопки M по 44 на всю ширину карточки (в макете 167,5 × 44) */
+.pb-selbar__actions { flex: 0 0 auto; display: flex; align-items: center; gap: var(--ds-space-2x); }
+.pb-selbar__actions .ds-btn { flex: 1 1 0; min-width: 0; }
+[id][hidden] { display: none !important; }
+
+/* ── Нижняя панель «Закрыть / Сохранить» ────────────────────
+   z-index 2 — чтобы панель и карточка выделения (абсолютная, внутри неё)
+   всегда были выше сетки и её липких колонок: цифры часов не выглядывают
+   поверх футеров (баг 11.11.2026) */
+.pb-bottombar {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  padding: var(--ds-space-2x) var(--ds-space-4x);
+  padding-bottom: calc(var(--ds-space-2x) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--ds-color-stroke-default);
+  background: var(--ds-color-brand-neutral-default);
+}
+.pb-bottombar__group { width: 100%; gap: var(--ds-space-2x); }
+.pb-bottombar__btn { flex: 1 1 0; min-width: 0; }
+
+/* ============================================================
+   Нижняя шторка, полноэкранный слой настроек и снэкбар
+
+   Пробел ДС: готового компонента «Bottom sheet» в css ДС нет — в Figma
+   он есть (`19096:46705`). Здесь только раскладка и позиционирование,
+   содержимое — штатные ds-* (Menu item, Input, Slide toggle, Button).
+
+   Геометрия из макета (инстансы `19121:61584` 375×264 и `19121:60840`
+   375×444):
+     · полотно — белое, радиус 24 сверху, тень Shadows/08 dp S;
+     · ручка — полоса 20 high, пилюля 40×4 по центру (`#D6D6D6`, y=8);
+     · контент — колонка с зазором 16 и нижним полем 16;
+     · заголовок — 24 high (Body L 18/24 Medium), поля 0 16;
+     · пункт меню — Menu item: 8/16, иконка 20 слева, текст Body M 16/24,
+       выбранный — фон Back selected `#F5F9FF` (Accent/10);
+     · кнопка внизу — 343×44 (Button group, поля 16).
+
+   Крестика закрытия в шторке нет: закрывают свайп вниз, тап по
+   затемнению и Esc (§ паттерны, журнал решений).
+   ============================================================ */
+
+.pb-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 24;
+  border: 0;
+  padding: 0;
+  opacity: .15;
+}
+
+.pb-sheet {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  z-index: 25;
+  width: 100%;
+  max-width: 390px;
+  max-height: 85dvh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;   /* max-height считаем с нижним полем 16 */
+  padding-bottom: calc(var(--ds-space-4x) + env(safe-area-inset-bottom, 0px));
+  border-radius: var(--ds-radius-6x) var(--ds-radius-6x) 0 0;
+  background: var(--ds-color-surface-default);
+  box-shadow: var(--ds-shadow-shadows-08-dp-s);
+  /* свайп вниз ловим pointer-событиями: вертикальный жест браузеру не отдаём */
+  touch-action: pan-y;
+  will-change: transform;
+}
+/* ручка: полоса 20 high (макет), пилюля по центру; тащим шторку за неё */
+.pb-sheet__grab {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--ds-size-5x);
+  padding: var(--ds-space-2x) 0;
+  box-sizing: border-box;
+  touch-action: none;
+  cursor: grab;
+}
+.pb-sheet__pill {
+  width: var(--ds-size-10x);
+  height: var(--ds-size-1x);
+  border-radius: var(--ds-radius-1x);
+  background: var(--ds-palette-neutral-300);
+}
+.pb-sheet__inner {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4x);
+}
+/* Длинный список (24 часа в «Интервале») не влезает в шторку: скроллится
+   только меню, заголовок и кнопка «Применить» остаются на месте — как в
+   макете, где меню 504 внутри шторки 660 */
+.pb-sheet__inner--fit { overflow: hidden; }
+.pb-sheet__inner--fit > * { flex: 0 0 auto; }
+.pb-sheet__inner--fit > .pb-sheet__menu {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.pb-sheet__head { display: flex; flex-direction: column; gap: var(--ds-space-0-5x); }
+.pb-sheet__title {
+  margin: 0;
+  padding: 0 var(--ds-space-4x);
+  color: var(--ds-color-text-primary);
+  font: var(--ds-font-body-l-18-normal-medium);
+  letter-spacing: var(--ds-font-body-l-18-normal-medium-spacing);
+}
+.pb-sheet__subtitle {
+  margin: 0;
+  padding: 0 var(--ds-space-4x);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-body-s-14-normal-regular-size);
+  line-height: var(--ds-font-body-s-14-normal-regular-line);
+}
+/* «Изменить тариф» — 375×264 в макете: заголовок Body M 16/24 (не 18),
+   три пункта по 56, радиус 24 и тень 08 dp остаются от базовой шторки */
+.pb-sheet--tariff { min-height: calc(var(--ds-size-10x) * 6 + var(--ds-size-6x)); }
+.pb-sheet__title--m {
+  font-size: var(--ds-font-body-m-16-normal-medium-size);
+  line-height: var(--ds-font-body-m-16-normal-medium-line);
+  letter-spacing: var(--ds-font-body-m-16-normal-medium-spacing);
+  font-weight: var(--ds-typography-font-weight-medium);
+}
+/* список тарифов: точка цвета слева (16) и название; строка 56 = 16 + 24 + 16.
+   Селектор специфичнее базового `.pb-sheet .ds-menu-item` (0,2,0) — иначе
+   срабатывает padding 8 и строка 40 вместо 56 (проверено замером) */
+.pb-sheet .pb-sheet__menu--tariff .ds-menu-item {
+  padding-top: var(--ds-space-4x);
+  padding-bottom: var(--ds-space-4x);
+}
+
+/* ── Пункт меню в шторке (Menu item из ДС) ────────────────────
+   В css ДС у пункта min-height 68 / 258 шириной (на мобиле 72) и
+   body S 14/20; в макете шторки — 375 шириной, 8/16 и Body M 16/24
+   (однострочный пункт 36 в макете; у нас 40 — из-за line-height 24
+   в токене Body M, токена 16/20 в ДС нет), двухстрочный — 56.
+   Слоты element-left/right в css залиты белым, а текст — цветом
+   текста в background (артефакт выгрузки, fixes.md п. 13): снимаем. */
+.pb-sheet__menu { display: flex; flex-direction: column; }
+/* пункты не сжимаются: длинный список (24 часа) прокручивается, а не
+   «сплющивается» — иначе flex-строка ужимается до 21 px вместо 40 */
+.pb-sheet__menu > .ds-menu-item { flex: 0 0 auto; }
+.pb-sheet .ds-menu-item {
+  width: 100%;
+  min-height: 0;
+  align-items: center;
+  /* у <button> рамка браузера 2px — в css ДС пункт описан без неё, снимаем;
+     иначе строка 44 вместо 40 (8 + 24 + 8) */
+  border: 0;
+  padding: var(--ds-space-2x) var(--ds-space-4x);
+  gap: var(--ds-space-2x);
+  background: var(--ds-color-menu-item-default-background);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pb-sheet .ds-menu-item.pb-mi--on {
+  background: var(--ds-palette-accent-10);   /* Menu item/Back selected — #F5F9FF */
+}
+.pb-sheet .ds-menu-item__content { flex: 1 1 auto; min-width: 0; }
+.pb-sheet .ds-menu-item__element-left,
+.pb-sheet .ds-menu-item__element-right { background: none; }
+.pb-sheet .ds-menu-item__text,
+.pb-sheet .ds-menu-item__label-down { background: none; }
+.pb-sheet .ds-menu-item__text {
+  font-size: var(--ds-font-body-m-16-normal-regular-size);
+  line-height: var(--ds-font-body-m-16-normal-regular-line);
+  letter-spacing: var(--ds-font-body-m-16-normal-regular-spacing);
+  font-weight: var(--ds-font-body-m-16-normal-regular-weight);
+  color: var(--ds-color-text-primary);
+  white-space: normal;
+}
+/* чекбокс слева (множественный выбор) и галка справа (единственный) */
+.pb-mi__box { color: var(--ds-color-icon-primary); }
+.pb-sheet .ds-menu-item.pb-mi--on .pb-mi__box { color: var(--ds-color-icon-accent); }
+/* Checkbox Type=Indeterminate — родительская строка «Все дни» / «Весь день» */
+.pb-mi__box--mixed { color: var(--ds-color-icon-accent); }
+/* родительская строка выбрана целиком: чекбокс активный (акцентный), а не серый.
+   Фон Back selected у неё не включаем — это переключатель списка, не значение */
+.pb-mi__box--on { color: var(--ds-color-icon-accent); }
+.pb-mi__check { color: var(--ds-color-icon-accent); }
+/* Родительская строка «все» отделена от списка линией 1 px (в макете —
+   border-bottom внутри пункта); рисуем вставкой вовнутрь, чтобы высота
+   строки осталась 40, а не 41 */
+.pb-mi--divider { box-shadow: inset 0 -1px 0 var(--ds-color-stroke-default); }
+.pb-mi__box svg,
+.pb-mi__check svg { width: 100%; height: 100%; display: block; fill: currentColor; }
+.pb-sheet__note {
+  margin: 0;
+  padding: 0 var(--ds-space-4x);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-caption-l-12-normal-regular-size);
+  line-height: var(--ds-font-caption-l-12-normal-regular-line);
+}
+.pb-sheet__note--error { color: var(--ds-color-text-negative); }
+/* формы внутри шторки (округление, минимальное время): поля по 16, как у пунктов */
+.pb-sheet__fields { display: flex; gap: var(--ds-space-2x); padding: 0 var(--ds-space-4x); }
+.pb-sheet__fields .ds-input { flex: 1 1 0; }
+.pb-sheet__toggle { padding: 0 var(--ds-space-4x); }
+/* кнопка внизу шторки: 343×44 в макете = поля 16 и Button M на мобиле */
+.pb-sheet__foot { display: flex; padding: 0 var(--ds-space-4x); }
+.pb-sheet__foot .ds-btn { flex: 1 1 0; min-width: 0; }
+/* жест «тап/протяжка» по ячейке и строке: вертикаль отдаём скроллу */
+.pb-cell, .pb-row { touch-action: pan-y; }
+
+/* ── Полноэкранный слой «Настройки» ───────────────────────── */
+.pb-screen {
+  position: fixed;
+  /* интерфейс телефона (статус-бар 55 + строка адреса 55) остаётся видимым:
+     экран начинается под ним, а не с нуля (заказчик 11.11.2026) */
+  top: 110px;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  /* ниже затемнения (24) и шторки (25): экран — слой под шторкой */
+  z-index: 23;
+  width: 100%;
+  max-width: 390px;
+  display: flex;
+  flex-direction: column;
+  background: var(--ds-color-surface-default);
+}
+/* шапка экрана повторяет блок заголовка услуги `.pb-title` (52 = 8 + 40 + 4,
+   поля 16): слово «Настройки» встаёт ровно туда же, где «Бильярд»
+   (x=16, текст 20/28 на y=14 от верха шапки) — заказчик 11.11.2026.
+   В макете `19121:59372` шапка 64 (20 сверху + 28 + 16) — отступление
+   вынужденное, оно и рождает совпадение по вертикали */
+.pb-screen__head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3x);
+  min-height: 52px;
+  padding: var(--ds-space-2x) var(--ds-space-4x) var(--ds-space-1x);
+  box-sizing: border-box;
+}
+/* крестик полноэкранной страницы — компонент Icon size 24 (`19121:59375`),
+   не Button icon; зона нажатия 44×44 добирается кнопкой и «съедает»
+   вертикальные поля шапки, чтобы её высота осталась 52 */
+.pb-close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -8px -10px -8px 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ds-color-icon-primary);
+  cursor: pointer;
+}
+.pb-close svg { display: block; fill: currentColor; }
+.pb-screen__title {
+  margin: 0;
+  color: var(--ds-color-text-primary);
+  font: var(--ds-font-header-s-20-normal-medium);
+  letter-spacing: var(--ds-font-header-s-20-normal-medium-spacing);
+}
+.pb-screen__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* экран интервала (вариант 1): три Select form и панель «Закрыть / Сохранить» */
+.pb-interval__fields {
+  display: flex;
+  flex-direction: column;
+  /* макет `19121:60375`: первое поле сразу под шапкой (y=174 при шапке 64),
+     шаг 64 = поле 48 + зазор 16; поля 16 */
+  gap: var(--ds-space-4x);
+  padding: 0 var(--ds-space-4x) var(--ds-space-4x);
+}
+.pb-interval__field {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+/* в ДС у Select form ширина фиксированная (250 px) — в колонке тянем на всю */
+.pb-interval__field .ds-select-form { width: 100%; }
+.pb-interval__field .ds-select-form .ds-input { width: 100%; }
+.pb-interval__field .ds-input__icon { color: var(--ds-color-text-secondary); }
+.pb-interval__field .ds-input__icon svg {
+  display: block;
+  width: var(--ds-size-5x);
+  height: var(--ds-size-5x);
+  fill: currentColor;
+}
+/* значение поля — всегда одна строка: не влезло — начало и «...(еще N)»
+   считает js/ui.js, CSS-эллипсис страхует от обрезки на пиксель */
+.pb-interval__field .ds-input__field {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* футер экрана: макет `19125:63217` — 80 = 60 (8 + 44 + 8) + Navigation Bar 20;
+   группа кнопок 359 шириной при полях 8, зазор 8 (кнопки 175,5) */
+.pb-screen__foot {
+  flex: 0 0 auto;
+  padding: var(--ds-space-2x);
+  padding-bottom: calc(var(--ds-space-2x) + env(safe-area-inset-bottom, 0px));
+}
+.pb-screen__foot .ds-btn-group { width: 100%; gap: var(--ds-space-2x); }
+.pb-screen__foot .ds-btn { flex: 1 1 0; min-width: 0; }
+/* строка настроек (заказчик 11.11.2026): название — основной текст 16/24,
+   значение — label down 14/20 под ним; поля 8/16 → 60. Классы — штатного
+   List item, кегли — токены Body M и Body S, фон-артефакт снимаем */
+.pb-screen__body .ds-list-item {
+  width: 100%;
+  min-height: calc(var(--ds-font-body-m-16-normal-regular-line) +
+                   var(--ds-font-body-s-14-normal-regular-line) + var(--ds-space-4x));
+  padding: var(--ds-space-2x) var(--ds-space-4x);
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.pb-screen__body .ds-list-item__content { flex: 1 1 auto; min-width: 0; }
+.pb-screen__body .ds-list-item__text {
+  background: none;
+  color: var(--ds-color-text-primary);
+  font-size: var(--ds-font-body-m-16-normal-regular-size);
+  line-height: var(--ds-font-body-m-16-normal-regular-line);
+  letter-spacing: var(--ds-font-body-m-16-normal-regular-spacing);
+  font-weight: var(--ds-font-body-m-16-normal-regular-weight);
+}
+.pb-screen__body .ds-list-item__label-down {
+  display: block;
+  background: none;
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-body-s-14-normal-regular-size);
+  line-height: var(--ds-font-body-s-14-normal-regular-line);
+  letter-spacing: var(--ds-font-body-s-14-normal-regular-spacing);
+  font-weight: var(--ds-font-body-s-14-normal-regular-weight);
+}
+.pb-screen__body .ds-list-item__element-right { background: none; color: var(--ds-color-icon-primary); }
+.pb-screen__body .ds-list-item__icon-size svg {
+  width: var(--ds-size-5x);
+  height: var(--ds-size-5x);
+  display: block;
+  fill: currentColor;
+}
+
+/* ── Снэкбар ──────────────────────────────────────────────── */
+.pb-snackbar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--ds-size-10x) + var(--ds-size-9x));
+  transform: translateX(-50%);
+  z-index: 30;
+  width: 100%;
+  max-width: 390px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pb-snackbar .ds-snackbar__body { width: 100%; box-sizing: border-box; }
+.pb-snackbar .ds-snackbar__content { flex: 1 1 auto; justify-content: flex-end; }
+/* текст снэкбара переносится: подписи состояния длиннее одной строки */
+.pb-snackbar .ds-snackbar__label { white-space: normal; }
+.pb-snackbar__btn {
+  min-height: 44px;
+  padding: 0 var(--ds-space-2x);
+  border: 0;
+  background: none;
+  color: var(--ds-color-text-inversive);
+  font-family: inherit;
+  font-size: var(--ds-font-body-s-14-normal-medium-size);
+  line-height: var(--ds-font-body-s-14-normal-medium-line);
+  font-weight: var(--ds-typography-font-weight-medium);
+  cursor: pointer;
+}

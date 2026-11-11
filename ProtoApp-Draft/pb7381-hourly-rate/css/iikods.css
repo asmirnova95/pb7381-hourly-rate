@@ -1,0 +1,32 @@
+/* ============================================================
+   PB-7381 · подключение iikoDS
+
+   Одна точка входа стилей: здесь только ссылки на дизайн-систему, своего
+   оформления нет (раскладка — css/prototype.css).
+
+   Порядок обязателен:
+     font.css → tokens.css → components-mobile/modes.css → components-mobile/components/index.css
+              → styles.css → components/index.css → fixes.css
+
+   Мобильный режим — атрибутом `data-mode="mobile"` на <html> (см. modes.css):
+   кнопки Button M вырастают 36 → 44 px (8+8+20 → 12+12+20), поле M — 56 px,
+   тумблер получает трек 52×32 и ручку 24. Классы компонентов от режима не
+   зависят — «мобильных» модификаторов у ДС нет, поэтому один и тот же набор
+   ds-* используется и на десктопе, и на телефоне.
+
+   ДС лежит в соседнем репозитории: ../../../Design-System/ от этой папки.
+   ============================================================ */
+
+@import url("../../../Design-System/components-web/font.css");
+@import url("../../../Design-System/components-web/tokens.css");
+
+/* мобильный слой ДС: ось режима + структурные моб-компоненты (порядок обязателен) */
+@import url("../../../Design-System/components-mobile/modes.css");
+@import url("../../../Design-System/components-mobile/components/index.css");
+
+/* сгенерированные текстовые стили и тени, затем агрегатор компонентов */
+@import url("../../../Design-System/components-web/styles.css");
+@import url("../../../Design-System/components-web/components/index.css");
+
+/* ручной слой правок поверх генерации ДС (обновления из Figma его не перезаписывают) */
+@import url("../../../Design-System/components-web/fixes.css");

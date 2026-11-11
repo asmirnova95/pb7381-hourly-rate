@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru" data-mode="mobile">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PB-7381 · Повременная тарификация — два варианта</title>
+<!--
+  ЭКРАН: точка входа прототипа (бриф §8: «демо-страница со ссылками на два варианта»).
+
+  Что здесь: название задачи, короткое описание двух вариантов расписания и две
+  ссылки — variant-1.html (список по дням) и variant-2.html (сетка 7×24).
+  Общие у вариантов: данные, настройки, шторка тарифа, футер выделения и снэкбар.
+
+  Внешний вид — только ДС (классы ds-*, токены), своего «на глаз» нет.
+-->
+<link rel="stylesheet" href="css/iikods.css">
+<link rel="stylesheet" href="css/prototype.css">
+</head>
+<body class="pb-page pb-page--index">
+
+<main class="pb-hub">
+  <header class="pb-hub__head">
+    <span class="pb-hub__eyebrow ds-text-caption-l-12-normal-regular">PB-7381 · iikoWeb → Номенклатура → карточка услуги</span>
+    <h1 class="pb-hub__title">Повременная тарификация</h1>
+    <p class="pb-hub__lead ds-text-body-s-14-normal-regular">
+      Мобильная настройка расписания цен: 7 дней × 24 часа. Где какой тариф — на карте,
+      сколько стоит — в строках и в проверке стоимости.
+    </p>
+  </header>
+
+  <ul class="pb-hub__list">
+    <li class="pb-hub__item">
+      <div class="pb-hub__item-text">
+        <span class="pb-hub__item-title">Вариант 1 · Список по дням</span>
+        <span class="pb-hub__item-desc ds-text-body-s-14-normal-regular">
+          Чипы дней Пн–Вс и 24 строки выбранного дня: время, название тарифа, цена.
+        </span>
+      </div>
+      <a class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled pb-hub__link" href="variant-1.html">
+        <span class="ds-btn__label">Открыть</span>
+      </a>
+    </li>
+    <li class="pb-hub__item">
+      <div class="pb-hub__item-text">
+        <span class="pb-hub__item-title">Вариант 2 · Сетка 7×24</span>
+        <span class="pb-hub__item-desc ds-text-body-s-14-normal-regular">
+          Дни по горизонтали, часы по вертикали, в ячейке цвет и буква тарифа.
+        </span>
+      </div>
+      <a class="ds-btn ds-btn--m ds-btn--accent ds-btn--outlined pb-hub__link" href="variant-2.html">
+        <span class="ds-btn__label">Открыть</span>
+      </a>
+    </li>
+  </ul>
+
+  <p class="pb-hub__note ds-text-caption-l-12-normal-regular">
+    Оба варианта используют одни данные, настройки, шторку тарифа и футер выделения.
+    Состояние живёт в памяти страницы: перезагрузка возвращает исходное расписание.
+  </p>
+</main>
+
+</body>
+</html>
