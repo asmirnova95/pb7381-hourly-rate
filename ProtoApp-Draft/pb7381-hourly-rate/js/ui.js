@@ -7,7 +7,7 @@
    выбор дня, выделение интервалов (тап и протяжка), футер
    выделения, шторка тарифа, настройки, снэкбар, сохранение.
 
-   Зависит от js/data.js, js/schedule.js, js/selection.js.
+   Зависит от js/core.js.
    DOM-контракт страницы: #pb-body, #selbar, #scrim, #sheet (#sheet-inner),
    #settings, #interval-page (#interval-fields — экран «Изменить тариф»),
    #snackbar, #enabled, #open-restaurant, #open-settings, #btn-close, #btn-save.
@@ -93,7 +93,7 @@ window.PB7381_UI = (function () {
   }
 
   /* Карточка интервала (макет `row` 19107:49258): 56 px, r8, pad 12, время 12/16
-     `#616161`, название и цена справа. Фон — цвет тарифа (data.js: базовая
+     `#616161`, название и цена справа. Фон — цвет тарифа (core.js: базовая
      Neutral/50, счастливый час Accent/10, выходные Negative/50). Тап открывает
      экран интервала, множественного выбора в варианте 1 нет. */
   function rowHtml(day, hour) {

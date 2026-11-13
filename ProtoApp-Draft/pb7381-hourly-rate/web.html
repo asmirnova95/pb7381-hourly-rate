@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PB-7381 · Веб-версия: карточка услуги, повременная тарификация</title>
+<!--
+  ЭКРАН: iiko web → Номенклатура → Услуги → карточка «Бильярд» → вкладка
+  «Повременная тарификация». Собран по стенду 680-440-665.iikoweb.ru
+  (nomenclature, логин adm), замеры структуры — в _figma/notes.md.
+
+  КАРКАС — ТОЛЬКО ИЗ ДС, как на стенде (см. замеры):
+    • шапка приложения 64 и боковое меню (рейл 52 + панель раздела 260) —
+      сквозные организмы app-header и app-sidenav, приходят из DS/connect.js;
+    • фон страницы — список номенклатуры (список услуг) с вкладками разделов;
+    • карточка услуги — панель справа поверх затемнения Backdrop 32 %:
+      ширина min(1400px, 100% − 176px), слева видно меню (как на стенде:
+      панель 1400 при окне 1576 стоит от x=176, затемнение на всё окно);
+      шапка 84 + вкладки 48 + контент + подвал 64.
+
+  ПРАВИЛА (заказчик 12.11.2026):
+    • ТОЛЬКО компоненты iikoDS — своих кнопок, полей, селектов, списков,
+      панелей и ячеек не изобретаем: ds-tabs, ds-card, ds-chips,
+      ds-menu-item, ds-menu-container, ds-input / ds-select-form,
+      ds-slide-toggle, ds-btn, ds-snackbar, ds-backdrop;
+    • размеры шрифтов, цвета и отступы — только токены ДС (var(--ds-*));
+      литералами задан лишь каркас: ширина карточки, колонка 380 (как
+      карточка в макете), столбец времени 56, высота строки сетки 44;
+    • текст в карточках — ВСЕГДА по левому краю, по центру не выравниваем
+      никогда (заказчик 12.11.2026); исключение — подпись времени в сетке,
+      её центрируем по колонке;
+    • снэкбар — всегда по центру экрана, 32 от нижнего края, одна строка,
+      кнопка действия — текстовая белая, не акцентная;
+    • скроллы: свой у сетки расписания, свой у правой колонки.
+
+  ЧТО В КАРТОЧКЕ:
+    • вкладки карточки — компонент Tabs ДС (остальные вкладки вне задачи —
+      ds-tab--disabled); от вкладок до строки с тумблером — 16, до сетки — 8;
+    • строка: тумблер «Включена» + ресторан рядом (16 между ними), в кнопке
+      ресторана между названием и стрелкой дропдауна 4 (13.11.2026);
+    • сетка 7×24 в Card ДС без заголовка: поля 8 (справа 0 — полосу прокрутки
+      держит край карточки), цена 12 / regular / Text primary, название тарифа
+      10 / Text secondary, по одной строке; в колонке времени интервал двумя
+      строками по центру — «00:00» над «01:00»; текст в ячейках не выделяется
+      мышью (иначе протяжка выделяет текст вместо ячеек);
+    • справа колонка 380 (карточки как в макете): «Тариф» и «Настройки» —
+      Card ДС, статичные (не сворачиваются), заголовок карточки 16 / medium,
+      текст 12; в «Тарифе» в заголовке справа — кнопка «Сбросить» (снимает
+      выделение интервалов). Чипы тарифов и «Сбросить» видны только при
+      выделении (13.11.2026); чип растянут по ширине карточки, фон — цвет
+      тарифа, без точки (12.11.2026), после применения тарифа выделение
+      сбрасывается;
+    • тумблер «Выключена» — на экране остаются только сам тумблер и подпись
+      «Повременная тарификация выключена. Включите, чтобы увидеть расписание
+      тарифов»: ресторан, сетка и обе карточки скрыты (заказчик 13.11.2026);
+    • подвал — только кнопки, прижатые вправо: подписи «Изменения применяются
+      к расписанию услуги» больше нет (заказчик 13.11.2026);
+    • в селектах «Настройки» нет галки у выбранного пункта, в полях времени
+      нет иконки часов (заказчик 13.11.2026).
+
+  РАСКЛАД ОДИН — ВЕБ (заказчик 14.11.2026): переключатель «Десктоп / Планшет /
+  Мобильный» убран, карточка открыта постоянно и закрыть её нельзя (нет крестика,
+  Esc и клик по затемнению её не закрывают). Планшет и телефон — отдельные
+  макеты (variant-1.html / variant-2.html), в этом файле их нет.
+-->
+<link rel="stylesheet" href="css/web.css">
+
+<!-- ДС и каркас приложения одной строкой: стили, иконки, шапка, боковое меню,
+     структура .panel > .frame -->
+<script src="../../Design-System/connect.js" defer></script>
+
+<!-- Организмы ДС, которые нужны только этой странице (через connect.js не приходят) -->
+<link rel="stylesheet" href="../../Design-System/organisms/app-header-content/header-content.css?v=1">
+<script src="../../Design-System/organisms/app-header-content/header-content.js?v=1" defer></script>
+<link rel="stylesheet" href="../../Design-System/organisms/app-table-header-actions/table-header-actions.css?v=2">
+<script src="../../Design-System/organisms/app-table-header-actions/table-header-actions.js?v=2" defer></script>
+</head>
+<body>
+
+<!-- ══ ФОН: страница номенклатуры (под затемнением карточки) ══ -->
+<div class="pbw-page">
+  <div class="pbw-page__inner">
+
+    <!-- Шапка раздела: стрелка назад, подпись + заголовок, действия -->
+    <header class="hc">
+      <div class="hc__left">
+        <div class="ds-text-ui hc__title">
+          <span class="ds-text-ui__element-left hc__back" role="button" tabindex="0" aria-label="Назад">
+            <span class="ds-icon-size ds-icon-size--6x ds-icon-size--state"><span class="material-icons">arrow_back</span></span>
+          </span>
+          <span class="ds-text-ui__content">
+            <span class="ds-text-ui__label-up hc__subtitle">Номенклатура</span>
+            <span class="ds-text-ui__list-item hc__heading">Услуги</span>
+          </span>
+        </div>
+      </div>
+      <div class="hc__right">
+        <span class="ds-search ds-search--xs hc__search" role="button" tabindex="0" aria-label="Поиск">
+          <span class="ds-search__icon"><span class="material-icons">search</span></span>
+        </span>
+        <div class="ds-btn-group ds-btn-group--horizontal hc__actions">
+          <button type="button" class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled">
+            <span class="ds-btn__icon"><span class="material-icons">add</span></span>
+            <span class="ds-btn__label">Создать</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Вкладки разделов номенклатуры (как на стенде: ALL/ITEMS/…/SERVICES) -->
+    <div class="ds-tabs pbw-listtabs" role="tablist" aria-label="Разделы номенклатуры">
+      <button type="button" class="ds-tab" role="tab" aria-selected="false">Все</button>
+      <button type="button" class="ds-tab" role="tab" aria-selected="false">Товары</button>
+      <button type="button" class="ds-tab" role="tab" aria-selected="false">Блюда</button>
+      <button type="button" class="ds-tab" role="tab" aria-selected="false">Модификаторы</button>
+      <button type="button" class="ds-tab" role="tab" aria-selected="false">Полуфабрикаты</button>
+      <button type="button" class="ds-tab" role="tab" aria-selected="true">Услуги</button>
+      <button type="button" class="ds-tab" role="tab" aria-selected="false">Ставки</button>
+    </div>
+
+    <!-- Полоса над таблицей: заголовок + тумблер «Показать удалённые» -->
+    <div class="tha pbw-listbar" data-tha-toggle="off">
+      <div class="tha__left">
+        <span class="tha__title">Услуги</span>
+      </div>
+      <div class="tha__right">
+        <label class="ds-slide-toggle">
+          <span class="ds-slide-toggle__row">
+            <input class="ds-slide-toggle__input" type="checkbox">
+            <span class="ds-slide-toggle__track"></span>
+            <span class="ds-slide-toggle__title">Показать удалённые</span>
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Таблица услуг: строка открывает карточку в панели справа -->
+    <div class="ds-table pbw-listtable" id="pbw-listtable" role="table" aria-label="Услуги"></div>
+  </div>
+</div>
+
+
+<!-- ══ КАРТОЧКА УСЛУГИ: затемнение + панель справа ═══════════
+     Затемнение — компонент Backdrop ДС: лежит на всём окне (и на меню),
+     панель — над ним. Клик по затемнению и Esc закрывают карточку. -->
+<div class="ds-backdrop pbw-scrim" id="pbw-scrim" hidden></div>
+
+<section class="pbw-drawer" id="pbw-drawer" role="dialog" aria-modal="true"
+         aria-labelledby="pbw-drawer-title">
+
+  <!-- Шапка карточки: 84, поля 24; заголовок + справка + крестик -->
+  <header class="pbw-drawer__head">
+    <h1 class="pbw-drawer__title" id="pbw-drawer-title">Бильярд</h1>
+    <div class="pbw-drawer__tools">
+        <button type="button" class="ds-btn ds-btn--s ds-btn--neutral ds-btn--text"
+                aria-label="Справка по повременной тарификации">
+          <span class="ds-btn__icon"><span class="material-icons" aria-hidden="true">info</span></span>
+        </button>
+    </div>
+  </header>
+
+  <!-- Вкладки карточки — компонент Tabs ДС (размеры не переопределяем).
+       Остальные вкладки вне задачи PB-7381: показаны неактивными (ds-tab--disabled). -->
+  <div class="ds-tabs pbw-drawer__tabs" role="tablist" aria-label="Разделы карточки услуги">
+    <button type="button" class="ds-tab ds-tab--disabled" role="tab" aria-selected="false" title="Вне задачи PB-7381">Основное</button>
+    <button type="button" class="ds-tab ds-tab--disabled" role="tab" aria-selected="false" title="Вне задачи PB-7381">Юридические требования</button>
+    <button type="button" class="ds-tab ds-tab--disabled" role="tab" aria-selected="false" title="Вне задачи PB-7381">Продажи</button>
+    <button type="button" class="ds-tab ds-tab--disabled" role="tab" aria-selected="false" title="Вне задачи PB-7381">Приготовление</button>
+    <button type="button" class="ds-tab ds-tab--disabled" role="tab" aria-selected="false" title="Вне задачи PB-7381">Доп. инфо</button>
+    <button type="button" class="ds-tab ds-tab--active" role="tab" aria-selected="true">Повременная тарификация</button>
+  </div>
+
+  <!-- Контент: прокрутки нет — свой скролл у сетки, свой у правой колонки -->
+  <div class="pbw-drawer__body">
+
+    <!-- Строка над таблицей: тумблер «Включена» + выбор ресторана -->
+    <div class="pbw-toolbar">
+      <label class="ds-slide-toggle">
+        <span class="ds-slide-toggle__row">
+          <input class="ds-slide-toggle__input" type="checkbox" id="pbw-enabled" checked>
+          <span class="ds-slide-toggle__track"></span>
+          <span class="ds-slide-toggle__title" id="pbw-enabled-title">Включена</span>
+        </span>
+      </label>
+
+      <div class="pbw-rest" id="pbw-rest">
+        <button type="button" class="ds-btn ds-btn--m ds-btn--neutral ds-btn--text"
+                id="pbw-rest-btn" aria-haspopup="menu" aria-expanded="false">
+          <span class="ds-btn__icon"><span class="material-icons">storefront</span></span>
+          <span class="ds-btn__label pbw-rest__name" id="pbw-rest-name">Прага</span>
+          <span class="ds-btn__icon"><span class="material-icons">arrow_drop_down</span></span>
+        </button>
+        <div class="ds-menu-container pbw-menu" id="pbw-rest-menu" role="menu" hidden></div>
+      </div>
+    </div>
+
+    <!-- Тумблер выключен: в контенте вкладки остаются только тумблер
+         «Выключена» и эта подпись (заказчик 13.11.2026). Текст тот же, что
+         в мобильных вариантах; показывается классом body.pbw-off. -->
+    <p class="pbw-offnote">Повременная тарификация выключена. Включите, чтобы увидеть расписание тарифов</p>
+
+    <!-- Раскладка вкладки: сетка слева, колонка карточек 400 справа -->
+    <div class="pbw-sched">
+      <div class="ds-card ds-card--outlined pbw-gridcard">
+        <div class="ds-card__content pbw-gridcard__content">
+          <div id="pbw-board" class="pbw-board"></div>
+        </div>
+      </div>
+
+      <aside class="pbw-aside">
+        <!-- 1. Тариф — Card ДС, статичная, не сворачивается. Два состояния
+             (макет заказчика 14.11.2026, карточка «Тариф»):
+             • без выделения — заголовок «Тариф» и подсказка;
+             • с выделением — заголовок «Тарифы», справа «Сбросить», сводка
+               выделения и тарифы чипами Chips ДС (Size M / Filled) на всю
+               ширину карточки: фон чипа — цвет тарифа, слева название,
+               справа цена, точки нет (12.11.2026). Клик по чипу сразу
+               применяет тариф и снимает выделение. -->
+        <div class="ds-card ds-card--outlined pbw-card pbw-card--rates" id="pbw-card-rates">
+          <div class="ds-card__header pbw-card__head">
+            <h2 class="ds-card__title pbw-card__title" id="pbw-card-rates-title">Тариф</h2>
+            <button type="button" class="ds-btn ds-btn--s ds-btn--neutral ds-btn--text pbw-reset"
+                    id="pbw-reset" aria-label="Сбросить выделение интервалов" hidden>
+              <span class="ds-btn__label">Сбросить</span>
+            </button>
+          </div>
+          <div class="ds-card__content pbw-card__content">
+            <div class="pbw-summary" id="pbw-sel"></div>
+            <div class="pbw-chips" id="pbw-tariffs" role="group" aria-label="Доступные тарифы" hidden></div>
+          </div>
+        </div>
+
+        <!-- 2. Настройки — Card ДС, статичная, собрана 1:1 с макетом (Figma
+             «Настройки», node 19204:247633): поля карточки 16, заголовок →
+             контент 12; между селектами 16, селекты → время 24, между
+             блоками времени 20, подпись → поля 8, поля в ряд 12.
+             Внутри только компоненты ДС: Select form (2), Input (4),
+             Slide toggle. Пара полей «Минимальное время» появляется только
+             при включённом тумблере (заказчик 12.11.2026). -->
+        <div class="ds-card ds-card--outlined pbw-card pbw-card--settings" id="pbw-card-settings">
+          <div class="ds-card__header pbw-card__head">
+            <h2 class="ds-card__title pbw-card__title">Настройки</h2>
+          </div>
+          <div class="ds-card__content pbw-card__content pbw-settings" id="pbw-settings-content">
+
+            <!-- Селекты: между ними 16 -->
+            <div class="pbw-settings__group">
+              <div class="pbw-field">
+                <div class="ds-select-form ds-select-form--m ds-select-form--populated pbw-select" id="pbw-mode"
+                     role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false"
+                     aria-labelledby="pbw-mode-label">
+                  <div class="ds-input ds-input--m ds-input--populated">
+                    <div class="ds-input__frame">
+                      <div class="ds-input__content">
+                        <span class="ds-input__label" id="pbw-mode-label">Режим тарификации</span>
+                        <span class="ds-input__field" data-value="mode">По абсолютному времени</span>
+                      </div>
+                      <span class="ds-input__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">arrow_drop_down</span></span></span>
+                    </div>
+                  </div>
+                </div>
+                <div class="ds-menu-container pbw-menu" id="pbw-mode-menu" role="listbox" hidden></div>
+              </div>
+
+              <!-- Режим отображения цены — тоже Select form ДС (вместо радиокнопок,
+                   как в макете карточки настроек) -->
+              <div class="pbw-field">
+                <div class="ds-select-form ds-select-form--m ds-select-form--populated pbw-select" id="pbw-price"
+                     role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false"
+                     aria-labelledby="pbw-price-label">
+                  <div class="ds-input ds-input--m ds-input--populated">
+                    <div class="ds-input__frame">
+                      <div class="ds-input__content">
+                        <span class="ds-input__label" id="pbw-price-label">Режим отображения цены</span>
+                        <span class="ds-input__field" data-value="price">Цена за час</span>
+                      </div>
+                      <span class="ds-input__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">arrow_drop_down</span></span></span>
+                    </div>
+                  </div>
+                </div>
+                <div class="ds-menu-container pbw-menu" id="pbw-price-menu" role="listbox" hidden></div>
+              </div>
+            </div>
+
+            <!-- Время: два блока с зазором 20 между ними -->
+            <div class="pbw-settings__group pbw-settings__group--times">
+
+              <!-- Округлять время до: подпись, ниже пара полей Часы / Минуты -->
+              <div class="pbw-settings__block">
+                <span class="pbw-settings__label" id="pbw-rounding-title">Округлять время до</span>
+                <div class="pbw-times" role="group" aria-labelledby="pbw-rounding-title">
+                  <div class="ds-input ds-input--m pbw-time">
+                    <div class="ds-input__frame">
+                      <div class="ds-input__content">
+                        <span class="ds-input__label">Часы</span>
+                        <input class="ds-input__field" id="pbw-rounding-hours" type="text" inputmode="numeric"
+                               maxlength="2" value="00" aria-label="Округлять время до, часы">
+                      </div>
+                    </div>
+                  </div>
+                  <div class="ds-input ds-input--m pbw-time">
+                    <div class="ds-input__frame">
+                      <div class="ds-input__content">
+                        <span class="ds-input__label">Минуты</span>
+                        <input class="ds-input__field" id="pbw-rounding-minutes" type="text" inputmode="numeric"
+                               maxlength="2" value="01" aria-label="Округлять время до, минуты">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Минимальное время: подпись слева + тумблер справа в одну строку,
+                   пара полей Часы / Минуты видна только при включённом тумблере
+                   (заказчик 12.11.2026) -->
+              <div class="pbw-settings__block">
+                <label class="ds-slide-toggle pbw-settings__switch">
+                  <span class="ds-slide-toggle__row">
+                    <input class="ds-slide-toggle__input" type="checkbox" id="pbw-mintime-on">
+                    <span class="ds-slide-toggle__track"></span>
+                    <span class="ds-slide-toggle__title" id="pbw-mintime-title">Минимальное время</span>
+                  </span>
+                </label>
+                <div class="pbw-times" id="pbw-mintime-fields" role="group"
+                     aria-labelledby="pbw-mintime-title" hidden>
+                  <div class="ds-input ds-input--m pbw-time">
+                    <div class="ds-input__frame">
+                      <div class="ds-input__content">
+                        <span class="ds-input__label">Часы</span>
+                        <input class="ds-input__field" id="pbw-mintime-hours" type="text" inputmode="numeric"
+                               maxlength="2" value="00" aria-label="Минимальное время, часы">
+                      </div>
+                    </div>
+                  </div>
+                  <div class="ds-input ds-input--m pbw-time">
+                    <div class="ds-input__frame">
+                      <div class="ds-input__content">
+                        <span class="ds-input__label">Минуты</span>
+                        <input class="ds-input__field" id="pbw-mintime-minutes" type="text" inputmode="numeric"
+                               maxlength="2" value="00" aria-label="Минимальное время, минуты">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Подвал карточки: 64, действия справа (как на стенде: Отмена / Сохранить /
+       Сохранить и закрыть). Подписи-подсказки слева нет — убрана по просьбе
+       заказчика 13.11.2026 («Изменения применяются к расписанию услуги»). -->
+  <footer class="pbw-drawer__foot">
+    <div class="ds-btn-group ds-btn-group--horizontal pbw-drawer__actions">
+      <button type="button" class="ds-btn ds-btn--m ds-btn--neutral ds-btn--outlined" id="pbw-cancel">
+        <span class="ds-btn__label">Отмена</span>
+      </button>
+      <button type="button" class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled" id="pbw-save">
+        <span class="ds-btn__label" id="pbw-save-label">Сохранить</span>
+      </button>
+      <button type="button" class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled" id="pbw-save-close">
+        <span class="ds-btn__label">Сохранить и закрыть</span>
+      </button>
+    </div>
+  </footer>
+</section>
+
+<!-- Снэкбар -->
+<div class="pbw-snackbar" id="pbw-snackbar" role="status" aria-live="polite" hidden></div>
+
+<script src="js/core.js"></script>
+<script src="js/web.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    window.PB7381_WEB.init();
+  });
+</script>
+</body>
+</html>

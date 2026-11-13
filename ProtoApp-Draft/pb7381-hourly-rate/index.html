@@ -13,7 +13,6 @@
 
   Внешний вид — только ДС (классы ds-*, токены), своего «на глаз» нет.
 -->
-<link rel="stylesheet" href="css/iikods.css">
 <link rel="stylesheet" href="css/prototype.css">
 </head>
 <body class="pb-page pb-page--index">
@@ -51,10 +50,22 @@
         <span class="ds-btn__label">Открыть</span>
       </a>
     </li>
+    <li class="pb-hub__item">
+      <div class="pb-hub__item-text">
+        <span class="pb-hub__item-title">Веб-версия · карточка услуги</span>
+        <span class="pb-hub__item-desc ds-text-body-s-14-normal-regular">
+          iiko web: меню и шапка приложения, карточка услуги панелью справа поверх
+          затемнения, вкладки ДС; сетка 7×24 (цена и тариф) и панели «Тарифы» / «Настройки».
+        </span>
+      </div>
+      <a class="ds-btn ds-btn--m ds-btn--accent ds-btn--outlined pb-hub__link" href="web.html">
+        <span class="ds-btn__label">Открыть</span>
+      </a>
+    </li>
   </ul>
 
   <p class="pb-hub__note ds-text-caption-l-12-normal-regular">
-    Оба варианта используют одни данные, настройки, шторку тарифа и футер выделения.
+    Все три страницы используют одни данные, настройки, тарифы и снэкбар.
     Состояние живёт в памяти страницы: перезагрузка возвращает исходное расписание.
   </p>
 </main>

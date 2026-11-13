@@ -6,6 +6,26 @@
    телефона, каркас экрана (шапка / расписание / футер / нижняя панель),
    сетка 7×24 и позиционирование шторок и снэкбара.
    ============================================================ */
+/* ── Подключение iikoDS (раньше лежало в css/iikods.css) ──────
+   Стили всех трёх страниц — один файл: сверху только ссылки на ДС,
+   ниже раскладка прототипа (заказчик 13.11.2026 — меньше файлов).
+   Порядок @import обязателен: font → tokens → мобильный слой →
+   styles → components → fixes. ДС — в соседнем репозитории,
+   пути считаются от папки css/. */
+
+@import url("../../../Design-System/components-web/font.css");
+@import url("../../../Design-System/components-web/tokens.css");
+
+/* мобильный слой ДС: ось режима + структурные моб-компоненты */
+@import url("../../../Design-System/components-mobile/modes.css");
+@import url("../../../Design-System/components-mobile/components/index.css");
+
+/* сгенерированные текстовые стили и тени, затем агрегатор компонентов */
+@import url("../../../Design-System/components-web/styles.css");
+@import url("../../../Design-System/components-web/components/index.css");
+
+/* ручной слой правок поверх генерации ДС */
+@import url("../../../Design-System/components-web/fixes.css");
 
 /* ── База страницы ─────────────────────────────────────────── */
 html, body { height: 100%; }

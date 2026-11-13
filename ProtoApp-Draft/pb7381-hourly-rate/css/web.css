@@ -1,0 +1,635 @@
+/* ============================================================
+   PB-7381 · ВЕБ-ВЕРСИЯ: карточка услуги в оболочке iiko web
+
+   Собрано по стенду (nomenclature, логин adm), замеры — в _figma/notes.md:
+     шапка приложения 64, меню: рейл 52 + панель раздела 260 (312 всего),
+     карточка услуги — панель справа поверх затемнения Backdrop 32 %.
+
+   ПРАВИЛА (заказчик 12.11.2026, записаны в README и 06-решения):
+   • ТОЛЬКО компоненты iikoDS. Своих кнопок, полей, селектов, списков,
+     панелей и ячеек не изобретаем: берём классы ДС (ds-tabs, ds-card,
+     ds-chips, ds-menu-item, ds-menu-container, ds-input, ds-select-form,
+     ds-slide-toggle, ds-btn, ds-snackbar).
+   • Цвета, кегли, интерлиньяжи, веса, отступы и радиусы — только токены
+     ДС (var(--ds-*)). Литералами задаются лишь размеры каркаса: ширина
+     карточки, правой колонки (380 — как карточка в макете), колонки времени
+     (56), высота строки (44).
+   • Текст в карточках — ВСЕГДА по левому краю; по центру не выравниваем
+     никогда (заказчик 12.11.2026). Исключение — подпись времени в сетке.
+   • Снэкбар — всегда по центру экрана, 32 от нижнего края, одна строка,
+     кнопка действия — текстовая белая.
+   • Скроллы: свой у сетки расписания, свой у правой колонки.
+
+   РАСКЛАД — ТОЛЬКО ВЕБ (заказчик 14.11.2026): переключателя режимов нет,
+   карточка всегда открыта и не закрывается (ни крестиком, ни Esc, ни тапом
+   по затемнению). Планшет и телефон — отдельные файлы (variant-1.html /
+   variant-2.html) со своими механиками: шторка тарифов, легенда, полоса
+   выделения. В web.css они не дублируются.
+   ============================================================ */
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--ds-color-surface-default);
+  font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  color: var(--ds-color-text-primary);
+}
+body {
+  display: flex;
+  flex-direction: column;
+}
+.view { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
+.panel { position: relative; flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+/* кадр страницы: прокрутка одна — здесь (как .content на стенде) */
+.frame {
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  background: var(--ds-color-surface-default);
+}
+/* ПРАВИЛО: шапка приложения — всегда 64 и не сжимается */
+.panel .apph { flex: 0 0 64px; height: 64px; }
+.panel .apph:not(.apph--tablet) .apph__logo-block { display: none; }
+.panel.app-snav-on .app-snav { top: 0; }
+.panel.app-snav-on .apph { margin-left: 52px; width: auto; }   /* width:auto — как у кадра, иначе шапка вылезает вправо */
+
+/* ── Плашка ревью ДС (ds-review) ─────────────────────────────
+   connect.js подключает служебный слой показа (бар «Экраны · Размер»).
+   Прототип однокранный, экранов-состояний у него нет — плашка только
+   съедает верх страницы и мешает сверке с продуктом, поэтому скрыта.
+   Сам слой не удаляем: он остаётся в ДС и работает на других страницах. */
+.dsr-bar, .dsr-chrome, .dsr-nav, .dsr-restore { display: none !important; }
+/* канва ревью даёт кадру внешние поля 24 — без плашки они только создают
+   горизонтальный скролл (кадр 1000 + 48 = 1048 при окне 1000) */
+body.dsr-page .panel { margin: 0 !important; }
+/* страховка от горизонтального скролла: фон под затемнением декоративный,
+   а шапка приложения на узком окне шире своего контейнера */
+html, body { overflow-x: hidden; }
+
+/* Обвязка каркаса: шапка приложения сдвинута на ширину рейла (52) и при
+   width:100% вылезала за кадр — горизонтальный скролл страницы. Кадр и панель
+   обрезаем: прокрутка живёт только внутри .frame и внутри карточки. */
+.view,
+.panel { overflow: hidden; }
+.panel { width: 100%; max-width: 100%; }
+.panel .apph { max-width: 100%; }
+
+/* ── Фон: страница номенклатуры (под затемнением) ─────────── */
+.pbw-page {
+  box-sizing: border-box;
+  min-height: 100%;
+  max-width: 100%;
+  overflow: hidden;                   /* фон под затемнением: не даёт горизонтального скролла */
+  padding: var(--ds-space-5x) var(--ds-space-8x) var(--ds-space-8x);
+  padding-left: var(--ds-space-7x);   /* на стенде контент отбит от меню на 30 */
+  background: var(--ds-color-surface-default);
+}
+.pbw-page__inner { display: flex; flex-direction: column; gap: var(--ds-space-4x); }
+
+.pbw-listtabs {
+  border-bottom: 1px solid var(--ds-color-stroke-default);
+  margin: 0 calc(-1 * var(--ds-space-2x));
+  padding: 0 var(--ds-space-2x);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pbw-listtabs::-webkit-scrollbar { display: none; }
+.pbw-listtabs .ds-tab { height: 48px; padding: 0 var(--ds-space-6x); }   /* 48 — размер строки вкладок стенда */
+.pbw-listbar { padding: 0; }
+
+/* Таблица услуг: строки как ds-table-content-row */
+.pbw-listtable { width: 100%; }
+.pbw-lrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px 140px 160px;
+  align-items: center;
+  gap: var(--ds-space-4x);
+  box-sizing: border-box;
+  min-height: 44px;                   /* размер строки таблицы */
+  padding: 0 var(--ds-space-2x);
+  border: 0;
+  border-bottom: 1px solid var(--ds-color-stroke-default);
+  background: none;
+  font-family: inherit;
+  font-size: var(--ds-font-body-s-14-normal-regular-size);
+  line-height: var(--ds-font-body-s-14-normal-regular-line);
+  color: var(--ds-color-text-primary);
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+}
+.pbw-lrow:hover { background: var(--ds-color-surface-hover); }
+.pbw-lrow--head {
+  min-height: var(--ds-size-9x);
+  color: var(--ds-color-text-secondary);
+  cursor: default;
+  background: var(--ds-color-brand-neutral-super-light);
+}
+.pbw-lrow--head:hover { background: var(--ds-color-brand-neutral-super-light); }
+.pbw-lrow__name { display: inline-flex; align-items: center; gap: var(--ds-space-2x); min-width: 0; }
+.pbw-lrow__name .material-icons { font-size: var(--ds-size-5x); line-height: var(--ds-size-5x); color: var(--ds-color-icon-primary); }
+.pbw-lrow__text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pbw-lrow__cell { color: var(--ds-color-text-secondary); }
+
+
+/* ── Затемнение: компонент Backdrop ДС ──────────────────────
+   Фон #333 из токена, прозрачность 32 % (как на стенде). Лежит на всём
+   окне, включая меню: под ним видно сайдбар. Клик и Esc закрывают карточку. */
+.pbw-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  opacity: .32;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.pbw-scrim[hidden] { display: none; }
+
+/* ── Карточка услуги: панель справа поверх затемнения ───────
+   Ширина панели и высоты шапки/подвала — размеры каркаса (замеры стенда);
+   всё внутри — компоненты и токены ДС. */
+.pbw-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1001;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: min(1400px, calc(100% - 176px));
+  min-width: 320px;
+  background: var(--ds-color-surface-default);
+  box-shadow: var(--ds-shadow-shadows-12-dp-m);
+}
+.pbw-drawer[hidden] { display: none; }
+
+/* шапка карточки: 84, поля 24 */
+.pbw-drawer__head {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ds-space-4x);
+  min-height: 84px;
+  padding: var(--ds-space-6x);
+  background: var(--ds-color-surface-default);
+}
+.pbw-drawer__title {
+  margin: 0;
+  font: var(--ds-font-header-s-20-normal-medium);
+  letter-spacing: var(--ds-font-header-s-20-normal-medium-spacing);
+  color: var(--ds-color-text-primary);
+}
+.pbw-drawer__tools { flex: 0 0 auto; display: flex; align-items: center; gap: var(--ds-space-1x); }
+
+/* ── Контент карточки ──────────────────────────────────────
+   Прокрутки здесь нет: свой скролл у сетки и свой у правой колонки. */
+.pbw-drawer__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 var(--ds-space-6x) var(--ds-space-6x);
+}
+
+/* Вкладки карточки — компонент Tabs ДС без переопределений размеров.
+   До строки с тумблером и рестораном — 16. */
+.pbw-drawer__tabs {
+  flex: 0 0 auto;
+  margin-bottom: var(--ds-space-4x);            /* 16 */
+}
+
+/* Строка над сеткой: тумблер + ресторан, между ними 16. До сетки — 8. */
+.pbw-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--ds-space-4x);                      /* 16 */
+  margin-bottom: var(--ds-space-2x);            /* 8 */
+}
+
+/* ── Тумблер «Выключена» (заказчик 13.11.2026) ────────────────
+   На экране остаются только сам тумблер и подпись под ним: ресторан,
+   сетка и обе карточки правой колонки скрыты. Прячем через display: none,
+   чтобы место в раскладке не занималось (hidden у сетки оставил бы пустоту). */
+body.pbw-off .pbw-toolbar .pbw-rest { display: none; }
+body.pbw-off .pbw-sched { display: none; }
+.pbw-offnote {
+  display: none;
+  margin: 0;
+  font: var(--ds-font-body-m-16-normal-regular);
+  color: var(--ds-color-text-secondary);
+  text-align: left;                    /* в карточках текст всегда по левому краю */
+}
+body.pbw-off .pbw-offnote { display: block; }
+
+.pbw-rest { position: relative; min-width: 0; }
+.pbw-rest__name { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* стрелка дропдауна — 4 от названия ресторана (заказчик 13.11.2026):
+   в Button ДС между слотами 8, поэтому гасим один шаг сетки отступов */
+.pbw-rest__name + .ds-btn__icon { margin-left: calc(-1 * var(--ds-space-1x)); }
+.pbw-field { position: relative; display: flex; flex-direction: column; gap: var(--ds-space-2x); }
+
+/* Выпадающий список — Menu (Container) ДС: только привязка к полю
+   и ограничение высоты; ширина пунктов — из компонента. */
+.pbw-menu {
+  position: absolute;
+  top: calc(100% + var(--ds-space-1x));
+  left: 0;
+  z-index: 20;
+  width: 100%;
+  min-height: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.pbw-rest .pbw-menu {
+  left: 0;                             /* меню выровнено по левому краю кнопки */
+  right: auto;
+  width: 258px;                        /* ширина пункта Menu item */
+}
+.pbw-menu[hidden] { display: none; }
+
+/* Карточки правой колонки статичные — Expansion panel больше не используется */
+
+/* ── Раскладка вкладки: сетка слева + колонка карточек 380 справа ──
+   Ширина колонки — размер карточки из макета (Figma 380), поэтому правый
+   блок встаёт в карточку без пересчёта внутренних отступов.
+   У каждой колонки свой скролл (заказчик 12.11.2026). */
+.pbw-sched {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: var(--ds-space-4x);
+  align-items: stretch;
+}
+.pbw-aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4x);
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ds-color-scroll-default-knob-color) transparent;
+}
+/* панели не сжимаются: иначе контент обрезается вместо прокрутки */
+.pbw-aside > * { flex: 0 0 auto; }
+
+/* карточка сетки — Card/Outlined ДС; заголовка нет.
+   Поля вокруг сетки — 8 (заказчик 13.11.2026), а правого поля нет совсем:
+   полоса прокрутки стоит у самого края карточки, поэтому отступ справа даёт
+   не карточка, а сама сетка (padding-right у .pbw-board). */
+.pbw-gridcard { min-width: 0; min-height: 0; }
+.pbw-gridcard__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--ds-space-2x) 0 var(--ds-space-2x) var(--ds-space-2x);   /* 8 / 0 / 8 / 8 */
+}
+
+/* ── Сетка 7 × 24 ────────────────────────────────────────────
+   В ДС компонента ячейки сетки нет: раскладка собрана на токенах, как
+   таблица стенда. Свой вертикальный скролл. */
+.pbw-board {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  /* 8 справа: полоса прокрутки прижата к краю карточки, а ячейки не липнут
+     к ней (заказчик 13.11.2026) */
+  padding-right: var(--ds-space-2x);
+  /* протяжка мышью выделяет ячейки: выделение текста внутри сетки запрещено
+     (заказчик 12.11.2026 — были мисс-клики, вместо ячеек выделялся текст) */
+  user-select: none;
+  -webkit-user-select: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ds-color-scroll-default-knob-color) transparent;
+}
+.pbw-grid {
+  display: grid;
+  grid-template-columns: 56px repeat(7, minmax(0, 1fr));
+  grid-template-rows: var(--ds-size-9x);   /* шапка дней 36, строки сетки 44 */
+  grid-auto-rows: 44px;
+  gap: var(--ds-space-1x);
+  min-width: 0;
+}
+.pbw-grid__corner,
+.pbw-grid__day,
+.pbw-grid__time {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: var(--ds-font-caption-l-12-normal-medium-size);
+  line-height: var(--ds-font-caption-l-12-normal-medium-line);
+  color: var(--ds-color-text-secondary);
+}
+/* шапка дней закреплена: при скролле видно, где какой день */
+.pbw-grid__corner,
+.pbw-grid__day {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--ds-color-surface-default);
+}
+.pbw-grid__corner { padding-left: var(--ds-space-1x); }
+/* в узких колонках планшета и телефона подпись дня прижималась к краю */
+.pbw-grid__day,
+.pbw-grid__time {
+  justify-content: center;
+  padding: 0 var(--ds-space-1x);
+  cursor: pointer;
+  border-radius: var(--ds-radius-1x);
+}
+.pbw-grid__day:hover,
+.pbw-grid__time:hover { background: var(--ds-color-surface-hover); color: var(--ds-color-text-primary); }
+.pbw-grid__day--on,
+.pbw-grid__time--on {
+  background: var(--ds-palette-accent-10);
+  color: var(--ds-color-text-accent);
+}
+/* Колонка времени: интервал двумя строками по центру ячейки — «00:00» над
+   «01:00» (заказчик 12.11.2026). Это единственное место, где текст стоит
+   по центру: в карточках он всегда слева. */
+.pbw-grid__time {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  text-align: center;
+}
+.pbw-grid__time-first,
+.pbw-grid__time-second { display: block; }
+
+/* ячейка: цена 12 / regular / Text primary сверху, название тарифа —
+   Caption S 8/10 (заказчик 14.11.2026: название на шаг меньше) /
+   Text secondary снизу. Каждая строка — одна, с многоточием. */
+.pbw-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: var(--ds-space-1x) var(--ds-space-2x);
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius-1x);
+  background: var(--pb-cell-bg, var(--ds-color-brand-neutral-super-light));
+  color: var(--pb-cell-ink, var(--ds-color-text-primary));
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+}
+.pbw-cell:hover { filter: brightness(.97); }
+.pbw-cell__price,
+.pbw-cell__name {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+.pbw-cell__price {
+  font-size: var(--ds-font-caption-l-12-normal-regular-size);    /* 12 */
+  line-height: var(--ds-font-caption-l-12-normal-regular-line);  /* 16 */
+  letter-spacing: var(--ds-font-caption-l-12-normal-regular-spacing);
+  font-weight: var(--ds-typography-font-weight-regular);         /* 400 */
+  color: var(--ds-color-text-primary);
+}
+.pbw-cell__name {
+  font-size: var(--ds-typography-caption-font-size-s);          /* 8 */
+  line-height: var(--ds-typography-caption-line-height-s);      /* 10 */
+  letter-spacing: var(--ds-typography-letter-spacing-none);
+  color: var(--ds-color-text-secondary);
+}
+/* выделение: контур акцента 1 px внутри ячейки (фон занят цветом тарифа).
+   Тень, а не border, — чтобы раскладка не сдвигалась. */
+.pbw-cell--on { box-shadow: inset 0 0 0 1px var(--ds-color-text-accent); }
+
+/* ── Правая колонка: карточки «Тарифы» и «Настройки» ─────────
+   Обе — Card/Outlined ДС, статичные: не сворачиваются, заголовок и контент —
+   слоты компонента. Заголовок стоит в строку с «Сбросить», от заголовка до
+   содержимого 12 (низ шапки 0 + верх контента 12).
+   ПРАВИЛО (заказчик 12.11.2026): текст в карточках — ВСЕГДА по левому краю,
+   по центру не выравниваем никогда (исключение — колонка времени сетки). */
+.pbw-card { min-width: 0; text-align: left; }
+.pbw-card__head {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3x);
+  padding: var(--ds-space-4x) var(--ds-space-4x) 0;
+}
+/* заголовки карточек — Body M 16 Medium (заказчик 13.11.2026).
+   Селектор из двух классов: css ДС подключается позже web.css и иначе
+   перебил бы кегль своим .ds-card__title */
+.pbw-card .pbw-card__title {
+  min-width: 0;
+  margin: 0;
+  font: var(--ds-font-body-m-16-normal-medium);
+  letter-spacing: var(--ds-font-body-m-16-normal-medium-spacing);
+  color: var(--ds-color-text-primary);
+}
+.pbw-card__content {
+  gap: var(--ds-space-4x);
+  padding: var(--ds-space-3x) var(--ds-space-4x) var(--ds-space-4x);
+}
+/* «Сбросить» есть только при выделении: без него кнопка скрыта целиком
+   (заказчик 13.11.2026), а не просто неактивна */
+.pbw-reset { flex: 0 0 auto; }
+.pbw-reset[hidden] { display: none; }
+
+/* сводка выделения внутри «Тарифов» — по левому краю, как весь текст
+   в карточках (заказчик 12.11.2026: по центру не выравниваем никогда) */
+.pbw-summary {
+  font: var(--ds-font-body-s-14-normal-regular);
+  color: var(--ds-color-text-secondary);
+  text-align: left;
+}
+.pbw-summary__line { display: block; }
+.pbw-summary__line--strong { color: var(--ds-color-text-primary); }
+
+/* Тарифы — чипы Chips ДС (Size M / Filled) колонкой на всю ширину карточки:
+   фон чипа — цвет тарифа (colorVar, тот же, что заливка ячейки), слева
+   название, справа цена, точки нет (заказчик 12.11.2026). */
+.pbw-chips {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2x);              /* 8 — gap размера M */
+}
+.pbw-chips[hidden] { display: none; }
+.pbw-chips .ds-chips {
+  width: 100%;                          /* чип Fill по ширине карточки */
+  box-sizing: border-box;
+  border: 1px solid transparent;        /* место под контур: высота не меняется */
+  cursor: pointer;
+  text-align: left;
+}
+/* цвет тарифа держим и в состояниях: у ДС --filled:hover/--active свой фон */
+.pbw-chips .ds-chips.ds-chips--filled,
+.pbw-chips .ds-chips.ds-chips--filled:hover,
+.pbw-chips .ds-chips.ds-chips--filled:active {
+  background: var(--pbw-chip-bg, var(--ds-color-chips-filled-default-background));
+  color: var(--pbw-chip-ink, var(--ds-color-chips-text-color));
+}
+.pbw-chips .ds-chips.ds-chips--filled:hover { filter: brightness(.98); }
+.pbw-chips .ds-chips.ds-chips--filled:active { filter: brightness(.96); }
+/* применённый ко всем выделенным интервалам тариф — контур акцента 1 px */
+.pbw-chips .ds-chips.ds-chips--filled.pbw-chip--on { border-color: var(--ds-color-stroke-accent); }
+.pbw-chips .ds-chips__chip-container {
+  flex: 1 1 auto;
+  justify-content: space-between;
+  min-width: 0;
+}
+.pbw-chips .ds-chips__chip-text {
+  background: none;                     /* у ДС у текста чипа фон = цвет текста */
+  color: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* цена в чипе — справа, цвет наследует от чипа (фон занят цветом тарифа) */
+.pbw-chip__price { flex: 0 0 auto; }
+.pbw-menu .ds-menu-item {
+  width: 100%;                        /* компонент 258 — растягиваем по карточке */
+  border: 0;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+.pbw-menu__check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ds-color-icon-accent);
+  font-size: var(--ds-size-5x);
+}
+.pbw-menu__check[hidden] { display: none; }
+
+/* поле-селект «Режим тарификации» — Select form ДС */
+/* Select form ДС: рамку и состояния рисует компонент, свой фокус-ринг
+   браузера снимаем — иначе вокруг поля появляется второй контур */
+.pbw-select { width: 100%; text-align: left; cursor: pointer; outline: none; }
+.pbw-select:focus-visible .ds-input__frame { border-color: var(--ds-color-text-accent); }
+.pbw-select .ds-input { width: 100%; }
+.pbw-select .ds-input__field { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── «Настройки» — сборка 1:1 с макетом (Figma, node 19204:247633):
+   заголовок → контент 12 (паддинг шапки и контента), селекты между собой 16,
+   селекты → время 24, блоки времени между собой 20, подпись → пара полей 8,
+   поля в ряд 12. Пара «Минимальное время» появляется только при включённом
+   тумблере (заказчик 12.11.2026). */
+.pbw-card__content.pbw-settings {
+  gap: var(--ds-space-6x);                        /* 24 — селекты → время */
+}
+.pbw-settings__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4x);                        /* 16 — между селектами */
+}
+.pbw-settings__group--times { gap: var(--ds-space-5x); }   /* 20 — между блоками времени */
+.pbw-settings__block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2x);                        /* 8 — подпись → поля */
+}
+.pbw-settings__label {
+  font: var(--ds-font-body-m-16-normal-regular);
+  color: var(--ds-color-text-primary);
+}
+/* подпись «Минимальное время» — тот же кегль, что у подписи блока в макете
+   (Body M 16): у Slide toggle в ДС заголовок 14/20, здесь он крупнее */
+.pbw-settings__switch .ds-slide-toggle__title {
+  font: var(--ds-font-body-m-16-normal-regular);
+  color: var(--ds-color-text-primary);
+}
+/* «Минимальное время»: подпись слева, тумблер справа, строка на всю ширину */
+.pbw-settings__switch { width: 100%; }
+.pbw-settings__switch .ds-slide-toggle__row {
+  flex-direction: row-reverse;                    /* подпись слева, тумблер справа */
+  justify-content: space-between;
+  width: 100%;
+}
+.pbw-times {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ds-space-3x);                        /* 12 — поля в ряд */
+}
+.pbw-times[hidden] { display: none; }
+.pbw-time { min-width: 0; }
+
+/* ── Подвал карточки: 64, действия справа ─────────────────────
+   Слева подписи нет: «Изменения применяются к расписанию услуги» убрана
+   по просьбе заказчика 13.11.2026, поэтому кнопки прижаты вправо. */
+.pbw-drawer__foot {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ds-space-4x);
+  min-height: 64px;
+  padding: var(--ds-space-3x) var(--ds-space-6x);
+  border-top: 1px solid var(--ds-color-stroke-default);
+  background: var(--ds-color-surface-default);
+}
+.pbw-drawer__actions { flex: 0 0 auto; justify-content: flex-end; }
+
+/* ── Снэкбар: компонент Snackbar ДС ─────────────────────────
+   ПРАВИЛО (заказчик 12.11.2026): всегда по центру экрана, 32 от нижнего
+   края, одна строка. */
+.pbw-snackbar {
+  position: fixed;
+  left: 50%;
+  bottom: var(--ds-space-8x);                   /* 32 */
+  transform: translateX(-50%);
+  z-index: 1010;
+  max-width: calc(100% - var(--ds-space-8x) * 2);
+}
+.pbw-snackbar[hidden] { display: none; }
+.pbw-snackbar .ds-snackbar { max-width: 100%; }
+.pbw-snackbar .ds-snackbar__label { overflow: hidden; text-overflow: ellipsis; }
+/* кнопка действия — текстовая белая, не синяя акцентная (заказчик 12.11.2026):
+   у ДС текстовая neutral-кнопка берёт белый фон, на тёмной плашке он лишний */
+.pbw-snackbar .ds-btn.ds-btn--text {
+  background: none;
+  color: var(--ds-color-snackbar-single-dark-text-color);
+}
+.pbw-snackbar .ds-btn.ds-btn--text:hover,
+.pbw-snackbar .ds-btn.ds-btn--text:active {
+  background: none;
+  color: var(--ds-color-snackbar-single-dark-text-color);
+  opacity: .8;
+}
+
+/* ── Адаптив окна (не мобильные паттерны: та же панель справа) ── */
+@media (max-width: 1279px) {
+  .pbw-sched { grid-template-columns: minmax(0, 1fr); }
+  .pbw-aside { overflow: visible; }
+}
+@media (max-width: 1100px) {
+  .pbw-drawer { width: 100%; }
+  .pbw-page { padding-left: var(--ds-space-8x); }
+}
+
+/* ══ ОДИН РАСКЛАД — ВЕБ ═══════════════════════════════════════
+   Переключателя режимов и компактных раскладов в этой странице нет
+   (заказчик 14.11.2026): на экране всегда только веб-версия карточки.
+   Планшет и телефон — отдельные файлы variant-1.html / variant-2.html
+   со своими механиками (шторка тарифов, легенда, полоса выделения);
+   в web.css они не дублируются. */
+
